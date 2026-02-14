@@ -1,0 +1,200 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            # Extract the section for the specific version if CHANGELOG.md exists
+            CHANGELOG=$(sed -n "/## \[${{ steps.version.outputs.version }}\]/,/## \[/p" CHANGELOG.md | sed '$d')
+          else
+            # Use recent commit logs if CHANGELOG.md does not exist
+            CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%an)" 2>/dev/null || echo "Initial release")
+          fi
+          
+          # Handling multi-line strings
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## SBOM Tools ${{ steps.version.outputs.version }}
+            
+            SBOM generation tools for SK Telecom supply chain security.
+            
+            ### Key Changes
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ### Installation
+            
+            #### Download Script
+            ```bash
+            curl -O https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/scan-sbom.sh
+            chmod +x scan-sbom.sh
+            ```
+            
+            #### Docker Image
+            ```bash
+            docker pull ghcr.io/${{ github.repository_owner }}/sbom-scanner:${{ steps.version.outputs.version }}
+            ```
+            
+            ### Documentation
+            
+            - [Getting Started](https://github.com/${{ github.repository }}/blob/main/docs/getting-started.md)
+            - [Usage Guide](https://github.com/${{ github.repository }}/blob/main/docs/usage-guide.md)
+            - [Docker Guide](https://github.com/${{ github.repository }}/blob/main/docker/README.md)
+            
+            ### Support
+            
+            - Email: opensource@sktelecom.com
+            - Issues: https://github.com/${{ github.repository }}/issues
+          draft: false
+          prerelease: false
+  
+  upload-scripts:
+    name: Upload Scripts
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Compress scripts
+        run: |
+          mkdir -p release-assets
+          
+          # Linux/macOS script
+          cp scripts/scan-sbom.sh release-assets/
+          chmod +x release-assets/scan-sbom.sh
+          tar -czf release-assets/scan-sbom-linux.tar.gz -C scripts scan-sbom.sh
+          
+          # Windows script
+          cp scripts/scan-sbom.bat release-assets/
+          zip -j release-assets/scan-sbom-windows.zip scripts/scan-sbom.bat
+          
+          # All script
+          tar -czf release-assets/sbom-tools-scripts-${{ needs.create-release.outputs.version }}.tar.gz scripts/
+      
+      - name: Upload Linux/macOS script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release-assets/scan-sbom-linux.tar.gz
+          asset_name: scan-sbom-linux.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload Windows script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release-assets/scan-sbom-windows.zip
+          asset_name: scan-sbom-windows.zip
+          asset_content_type: application/zip
+      
+      - name: Upload all scripts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release-assets/sbom-tools-scripts-${{ needs.create-release.outputs.version }}.tar.gz
+          asset_name: sbom-tools-scripts-${{ needs.create-release.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+  
+  upload-examples:
+    name: Upload Examples
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Compress examples
+        run: |
+          mkdir -p release-assets
+          tar -czf release-assets/sbom-tools-examples-${{ needs.create-release.outputs.version }}.tar.gz examples/
+      
+      - name: Upload examples
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release-assets/sbom-tools-examples-${{ needs.create-release.outputs.version }}.tar.gz
+          asset_name: sbom-tools-examples-${{ needs.create-release.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+  
+  notify:
+    name: Release Notification
+    needs: [create-release, upload-scripts, upload-examples]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Release summary
+        run: |
+          echo "## Release ${{ needs.create-release.outputs.version }} Completed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Downloads" >> $GITHUB_STEP_SUMMARY
+          echo "- [Linux/macOS Script](https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/scan-sbom-linux.tar.gz)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Windows Script](https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/scan-sbom-windows.zip)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Example Projects](https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/sbom-tools-examples-${{ needs.create-release.outputs.version }}.tar.gz)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Image" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository_owner }}/sbom-scanner:${{ needs.create-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
