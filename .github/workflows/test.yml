@@ -1,0 +1,147 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Pull SBOM Scanner image
+        run: |
+          docker pull ghcr.io/sktelecom/sbom-scanner:latest
+      
+      - name: Run integration tests
+        run: |
+          cd tests
+          chmod +x test-scan.sh
+          ./test-scan.sh --ci
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/output/
+      
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: tests/output/*.log
+
+  examples:
+    name: Example Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        example: [java-maven, python-pip, nodejs-npm]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Pull SBOM Scanner image
+        run: |
+          docker pull ghcr.io/sktelecom/sbom-scanner:latest
+      
+      - name: Test ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          chmod +x run.sh
+          ./run.sh
+      
+      - name: Validate SBOM
+        run: |
+          cd examples/${{ matrix.example }}
+          # SBOM 파일 존재 확인
+          ls -la *_bom.json
+          
+          # JSON 유효성 검사
+          jq empty *_bom.json
+          
+          # CycloneDX 형식 확인
+          jq -e '.bomFormat == "CycloneDX"' *_bom.json
+          
+          # 컴포넌트 존재 확인
+          component_count=$(jq '.components | length' *_bom.json)
+          echo "Components found: $component_count"
+          
+          if [ "$component_count" -lt 1 ]; then
+            echo "Error: No components found in SBOM"
+            exit 1
+          fi
+      
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.example }}
+          path: examples/${{ matrix.example }}/*_bom.json
+
+  docker-example:
+    name: Docker Image Example
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Pull SBOM Scanner image
+        run: |
+          docker pull ghcr.io/sktelecom/sbom-scanner:latest
+      
+      - name: Build example Docker image
+        run: |
+          cd examples/docker-image
+          docker build -t sbom-example:test .
+      
+      - name: Generate SBOM for Docker image
+        run: |
+          cd examples/docker-image
+          chmod +x run.sh
+          ./run.sh
+      
+      - name: Validate Docker SBOM
+        run: |
+          cd examples/docker-image
+          
+          # SBOM 유효성 검사
+          jq empty *_bom.json
+          
+          # OS 패키지 확인
+          os_packages=$(jq '[.components[] | select(.type == "operating-system")] | length' *_bom.json)
+          echo "OS packages found: $os_packages"
+          
+          # Python 패키지 확인
+          python_packages=$(jq '[.components[] | select(.purl | contains("pkg:pypi"))] | length' *_bom.json)
+          echo "Python packages found: $python_packages"
+          
+          if [ "$python_packages" -lt 1 ]; then
+            echo "Error: No Python packages found in SBOM"
+            exit 1
+          fi
+      
+      - name: Upload Docker SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-docker-image
+          path: examples/docker-image/*_bom.json

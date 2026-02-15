@@ -1,6 +1,6 @@
 # SBOM Tools
 
-**[🇰🇷 한국어](README.ko.md)** | **🇺🇸 English**
+[🇰🇷 한국어](README.ko.md) | 🇺🇸 English
 
 > Software Bill of Materials (SBOM) generation tool for supply chain security
 
@@ -15,33 +15,78 @@ SBOM Tools is a comprehensive solution for automatically generating Software Bil
 
 ### Key Features
 
-- **Multi-language Support**: Java, Python, Node.js, Ruby, PHP, Rust, Go, .NET, C/C++
-- **Versatile Analysis**: Source code, Docker images, binary files, RootFS
-- **Standard Format**: Generates CycloneDX 1.4 format SBOM
-- **Docker-based**: No need to install language-specific runtimes
-- **Multi-platform**: Supports Linux (AMD64, ARM64) and macOS
+- Multi-language Support: Java, Python, Node.js, Ruby, PHP, Rust, Go, .NET, C/C++
+- Versatile Analysis: Source code, Docker images, binary files, RootFS
+- Standard Format: Generates CycloneDX 1.4 format SBOM
+- Docker-based: No need to install language-specific runtimes
+- Multi-platform: Supports Linux (AMD64, ARM64) and macOS
+- Optimized Size: ~3-4 GB Docker image (50% smaller than v0.x)
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    User Interface                       │
+│  scan-sbom.sh (Linux/macOS) │ scan-sbom.bat (Windows)  │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│              Docker Container Runtime                    │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Multi-language Environment                      │   │
+│  │  • JDK 17  • Python 3  • Node.js 20              │   │
+│  │  • Ruby    • PHP       • Rust                    │   │
+│  │  • Go      • .NET      • Build Tools             │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  SBOM Generation Tools                           │   │
+│  │  • cdxgen (source code analysis)                 │   │
+│  │  • syft (container/binary analysis)              │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+                  CycloneDX SBOM File
+```
+
+For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+### Project Structure
+
+```
+sbom-tools/
+├── scripts/          # User-facing wrapper scripts
+├── docker/           # Container image definition
+├── examples/         # Sample projects for each language
+├── tests/            # Integration test suite
+├── docs/             # Documentation
+└── .github/          # CI/CD workflows
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for complete structure and component details.
 
 ### Supported Languages
 
 | Language | Package Manager | Supported Versions |
 |----------|----------------|-------------------|
-| **Java** | Maven, Gradle | Java 7-17 (JDK 17) |
-| **Python** | pip, Poetry, Pipenv | Python 3.6+ |
-| **Node.js** | npm, Yarn, pnpm | Node.js 14+ |
-| **Ruby** | Bundler | Ruby 2.x, 3.x |
-| **PHP** | Composer | PHP 7.x, 8.x |
-| **Rust** | Cargo | Rust 1.x |
-| **Go** | Go modules | Go 1.16+ |
-| **.NET** | NuGet | .NET Core, .NET 5+ |
-| **C/C++** | Conan, vcpkg | - |
+| Java | Maven, Gradle | Java 7-17 (JDK 17) |
+| Python | pip, Poetry, Pipenv | Python 3.6+ |
+| Node.js | npm, Yarn, pnpm | Node.js 14+ |
+| Ruby | Bundler | Ruby 2.x, 3.x |
+| PHP | Composer | PHP 7.x, 8.x |
+| Rust | Cargo | Rust 1.x |
+| Go | Go modules | Go 1.16+ |
+| .NET | NuGet | .NET Core, .NET 5+ |
+| C/C++ | Conan, vcpkg | - |
 
-> **Note:** The Docker image includes JDK 17, which supports analysis of projects built with Java 7-17. For Java 21 projects or Python 2.x legacy projects, please refer to the [documentation](docs/usage-guide.md).
+> Note: The Docker image includes JDK 17, which supports analysis of projects built with Java 7-17. For Java 21 projects or Python 2.x legacy projects, please refer to the [documentation](docs/usage-guide.md).
 
 ## Quick Start
 
 ### 1. Prerequisites
 
-- **Docker**: 20.10 or higher ([Installation Guide](https://docs.docker.com/get-docker/))
+- Docker: 20.10 or higher ([Installation Guide](https://docs.docker.com/get-docker/))
 
 ```bash
 # Verify Docker installation
@@ -64,7 +109,7 @@ cd /path/to/your/project
 ./scan-sbom.sh --project "MyApp" --version "1.0.0" --generate-only
 ```
 
-**Result**: Generates `MyApp_1.0.0_bom.json`
+Result: Generates `MyApp_1.0.0_bom.json`
 
 ## Usage Examples
 
@@ -123,7 +168,7 @@ SBOM_SCANNER_IMAGE=ghcr.io/sktelecom/sbom-scanner:v1.0.0 \
   ./scan-sbom.sh --project "MyApp" --version "1.0.0" --generate-only
 ```
 
-**Version Strategy:**
+Version Strategy:
 - `latest` - Always get the newest features (recommended for development)
 - `v1` - Latest v1.x.x release (recommended for CI/CD)
 - `v1.0` - Latest v1.0.x patch (recommended for stable production)
@@ -145,9 +190,9 @@ scan-sbom.bat --project "MyApp" --version "1.0.0" --generate-only
 
 ## Documentation
 
-- **[Getting Started](docs/getting-started.md)**: Detailed installation and first-use guide (Korean)
-- **[Usage Guide](docs/usage-guide.md)**: Language-specific usage and advanced features (Korean)
-- **[Docker Image](docker/README.md)**: Docker image build and deployment (Korean)
+- [Getting Started](docs/getting-started.md): Detailed installation and first-use guide (Korean)
+- [Usage Guide](docs/usage-guide.md): Language-specific usage and advanced features (Korean)
+- [Docker Image](docker/README.md): Docker image build and deployment (Korean)
 
 ## Architecture
 
@@ -181,6 +226,27 @@ scan-sbom.bat --project "MyApp" --version "1.0.0" --generate-only
           │   (CycloneDX 1.4)     │
           └───────────────────────┘
 ```
+
+## Documentation
+
+### For Users
+
+- [Getting Started](docs/getting-started.md) - Quick start guide (Korean)
+- [Usage Guide](docs/usage-guide.md) - Detailed usage instructions (Korean)
+- [Examples Guide](docs/examples-guide.md) - How to use example projects
+
+### For Contributors
+
+- [Architecture](ARCHITECTURE.md) - System design and component details
+- [Package Manager Guide](PACKAGE_MANAGER_GUIDE.md) - Adding new package manager support
+- [Testing Guide](TESTING_GUIDE.md) - Testing framework and procedures
+- [Contributing](CONTRIBUTING.md) - Contribution guidelines (Korean)
+
+### Additional Resources
+
+- [CycloneDX Specification](https://cyclonedx.org/)
+- [cdxgen Documentation](https://github.com/CycloneDX/cdxgen)
+- [Syft Documentation](https://github.com/anchore/syft)
 
 ## Contributing
 
@@ -220,9 +286,9 @@ limitations under the License.
 
 ## Support
 
-- **Email**: opensource@sktelecom.com
-- **Issue Tracker**: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
-- **Documentation**: https://sktelecom.github.io/guide/supply-chain/
+- Email: opensource@sktelecom.com
+- Issue Tracker: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
+- Documentation: https://sktelecom.github.io/guide/supply-chain/
 
 ## Related Projects
 

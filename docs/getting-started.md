@@ -39,7 +39,7 @@ Docker Desktop for Mac을 설치합니다:
 Docker Desktop for Windows를 설치합니다:
 - https://docs.docker.com/desktop/install/windows-install/
 
-**WSL2 사용 권장**: Windows에서는 WSL2 환경에서 사용하는 것을 권장합니다.
+WSL2 사용 권장: Windows에서는 WSL2 환경에서 사용하는 것을 권장합니다.
 
 ### 설치 확인
 
@@ -186,7 +186,7 @@ cd ~/sbom-test
 /path/to/scan-sbom.sh --project "TestApp" --version "1.0.0" --generate-only
 ```
 
-**출력 예시:**
+출력 예시:
 ```
 ==========================================
  Starting SBOM Analysis
@@ -216,7 +216,7 @@ cd ~/sbom-test
   --generate-only
 ```
 
-**참고**: 이미지가 로컬에 없으면 자동으로 다운로드됩니다.
+참고: 이미지가 로컬에 없으면 자동으로 다운로드됩니다.
 
 #### 바이너리 파일
 
@@ -241,7 +241,7 @@ ls -lh *_bom.json
 # -rw-r--r--  1 user  staff   45K Jan 15 10:30 TestApp_1.0.0_bom.json
 ```
 
-**정상 파일 크기**: 최소 1KB 이상 (프로젝트 규모에 따라 다름)
+정상 파일 크기: 최소 1KB 이상 (프로젝트 규모에 따라 다름)
 
 ### 파일 내용 확인
 
@@ -258,7 +258,7 @@ cat TestApp_1.0.0_bom.json | jq '{
 }'
 ```
 
-**출력 예시:**
+출력 예시:
 ```json
 {
   "bomFormat": "CycloneDX",
@@ -275,7 +275,7 @@ cat TestApp_1.0.0_bom.json | jq '{
 cat TestApp_1.0.0_bom.json | jq -r '.components[] | "\(.name)@\(.version)"' | head -10
 ```
 
-**출력 예시:**
+출력 예시:
 ```
 express@4.18.2
 lodash@4.17.21
@@ -299,9 +299,9 @@ CycloneDX 공식 검증 도구로 SBOM 유효성을 확인할 수 있습니다:
 
 #### 오류: "docker: command not found"
 
-**원인**: Docker가 설치되지 않음
+원인: Docker가 설치되지 않음
 
-**해결**:
+해결:
 ```bash
 # Docker 설치
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -310,9 +310,9 @@ sudo sh get-docker.sh
 
 #### 오류: "Cannot connect to the Docker daemon"
 
-**원인**: Docker 데몬이 실행 중이지 않음
+원인: Docker 데몬이 실행 중이지 않음
 
-**해결**:
+해결:
 ```bash
 # Linux
 sudo systemctl start docker
@@ -324,9 +324,9 @@ sudo systemctl enable docker
 
 #### 오류: "permission denied while trying to connect"
 
-**원인**: 현재 사용자가 docker 그룹에 속하지 않음
+원인: 현재 사용자가 docker 그룹에 속하지 않음
 
-**해결**:
+해결:
 ```bash
 # 사용자를 docker 그룹에 추가
 sudo usermod -aG docker $USER
@@ -340,18 +340,18 @@ newgrp docker
 
 #### 오류: "Permission denied: ./scan-sbom.sh"
 
-**원인**: 실행 권한 없음
+원인: 실행 권한 없음
 
-**해결**:
+해결:
 ```bash
 chmod +x scan-sbom.sh
 ```
 
 #### 오류: "bash: ./scan-sbom.sh: /bin/bash^M: bad interpreter"
 
-**원인**: Windows에서 작성된 파일의 줄바꿈 문제 (CRLF)
+원인: Windows에서 작성된 파일의 줄바꿈 문제 (CRLF)
 
-**해결**:
+해결:
 ```bash
 # dos2unix 설치 및 변환
 sudo apt-get install dos2unix  # Ubuntu/Debian
@@ -365,9 +365,9 @@ sed -i 's/\r$//' scan-sbom.sh
 
 #### 증상: "SBOM file is empty or not generated"
 
-**원인 1**: 프로젝트에 의존성 파일이 없음
+원인 1: 프로젝트에 의존성 파일이 없음
 
-**해결**:
+해결:
 ```bash
 # Node.js
 npm install  # package-lock.json 생성
@@ -379,9 +379,9 @@ pip freeze > requirements.txt
 mvn dependency:tree  # 의존성 확인
 ```
 
-**원인 2**: 잘못된 디렉토리에서 실행
+원인 2: 잘못된 디렉토리에서 실행
 
-**해결**:
+해결:
 ```bash
 # package.json, pom.xml, requirements.txt 등이 있는 디렉토리에서 실행
 cd /path/to/project/root
@@ -390,9 +390,9 @@ cd /path/to/project/root
 
 #### 증상: "No components found in SBOM"
 
-**원인**: 의존성이 실제로 없거나 매우 적음
+원인: 의존성이 실제로 없거나 매우 적음
 
-**확인**:
+확인:
 ```bash
 # package.json 확인
 cat package.json
@@ -405,9 +405,9 @@ jq '.dependencies' package.json
 
 #### 오류: "Error response from daemon: Get https://ghcr.io/v2/"
 
-**원인**: 네트워크 연결 문제 또는 프록시 설정
+원인: 네트워크 연결 문제 또는 프록시 설정
 
-**해결**:
+해결:
 ```bash
 # 인터넷 연결 확인
 ping google.com
@@ -424,7 +424,7 @@ export HTTPS_PROXY=http://proxy.example.com:8080
 
 #### Java 프로젝트가 분석되지 않음
 
-**확인 사항**:
+확인 사항:
 ```bash
 # pom.xml 또는 build.gradle이 있는지 확인
 ls -la pom.xml build.gradle
@@ -435,9 +435,9 @@ xmllint --noout pom.xml 2>&1
 
 #### Python 2.x 프로젝트 (지원 중단)
 
-> **중요:** Python 2는 2020년에 공식 지원이 종료되었으며, v1.0.0부터 Docker 이미지에서 제거되었습니다. Python 2 프로젝트는 Python 3로 마이그레이션하는 것을 권장합니다.
+> 중요: Python 2는 2020년에 공식 지원이 종료되었으며, v1.0.0부터 Docker 이미지에서 제거되었습니다. Python 2 프로젝트는 Python 3로 마이그레이션하는 것을 권장합니다.
 
-**레거시 프로젝트를 위한 대안:**
+레거시 프로젝트를 위한 대안:
 - Python 3로 코드 마이그레이션 (권장)
 - Python 2가 포함된 커스텀 Docker 이미지 빌드
 
@@ -445,12 +445,12 @@ xmllint --noout pom.xml 2>&1
 
 SBOM을 성공적으로 생성했다면, 다음 문서를 참고하세요:
 
-- **[사용 가이드](usage-guide.md)**: 언어별 상세 사용법 및 고급 기능
-- **[예제 프로젝트](../examples/)**: 언어별 예제 프로젝트
-- **[Docker 이미지 가이드](../docker/README.md)**: Docker 이미지 직접 빌드 및 배포
+- [사용 가이드](usage-guide.md): 언어별 상세 사용법 및 고급 기능
+- [예제 프로젝트](../examples/): 언어별 예제 프로젝트
+- [Docker 이미지 가이드](../docker/README.md): Docker 이미지 직접 빌드 및 배포
 
 ## 도움이 필요하신가요?
 
-- **이슈 제출**: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
-- **이메일 문의**: opensource@sktelecom.com
-- **공식 가이드**: https://sktelecom.github.io/guide/supply-chain/
+- 이슈 제출: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
+- 이메일 문의: opensource@sktelecom.com
+- 공식 가이드: https://sktelecom.github.io/guide/supply-chain/

@@ -58,6 +58,12 @@ SBOM Tools 프로젝트에 기여해 주셔서 감사합니다! 이 문서는 �
 - 성능 개선
 - 문서 개선
 - 테스트 추가
+- 새로운 패키지 매니저 지원 추가
+
+**개발 가이드**:
+- [ARCHITECTURE.md](ARCHITECTURE.md) - 시스템 아키텍처 이해
+- [PACKAGE_MANAGER_GUIDE.md](PACKAGE_MANAGER_GUIDE.md) - 패키지 매니저 추가 방법
+- [TESTING_GUIDE.md](TESTING_GUIDE.md) - 테스트 작성 및 실행
 - 다국어 지원 (영문 번역 등)
 
 ### 4. 문서 개선
@@ -418,4 +424,4 @@ GitHub의 [Contributors](https://github.com/sktelecom/sbom-tools/graphs/contribu
 
 ---
 
-**다시 한 번 기여해 주셔서 감사합니다!**
+**다시 한 번 기여해 주셔서 감사합니다! **

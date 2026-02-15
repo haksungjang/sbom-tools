@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 테스트 스크립트 실행 권한 부여
+        run: |
+          chmod +x scripts/scan-sbom.sh
+          chmod +x tests/test-scan.sh
+      
+      - name: Integration Test 실행
+        run: ./tests/test-scan.sh
+      
+      - name: Upload generated SBOMs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-sbom-files
+          path: tests/test-workspace/*_bom.json
+          retention-days: 7
+  
+  validate-examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        example: [java-maven, python, nodejs]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Grant script permissions
+        run: chmod +x scripts/scan-sbom.sh
+      
+      - name: Validate Java example
+        if: matrix.example == 'java-maven'
+        run: |
+          cd examples/java-maven
+          test -f pom.xml
+          test -f src/main/java/com/example/Application.java
+          test -f README.md
+      
+      - name: Validate Python example
+        if: matrix.example == 'python'
+        run: |
+          cd examples/python
+          test -f requirements.txt
+          test -f app.py
+          test -f README.md
+      
+      - name: Validate Node.js example
+        if: matrix.example == 'nodejs'
+        run: |
+          cd examples/nodejs
+          test -f package.json
+          test -f index.js
+          test -f README.md
+          npm install --package-lock-only
+          test -f package-lock.json
+  
+  lint:
+    name: Lint Scripts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      
+      - name: Lint Bash scripts
+        run: |
+          shellcheck scripts/scan-sbom.sh || true
+          shellcheck docker/entrypoint.sh || true
+          shellcheck tests/test-scan.sh || true
+      
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/Dockerfile
+          failure-threshold: warning
+  
+  markdown-lint:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check Markdown files
+        run: |
+          test -f README.md
+          test -f docs/getting-started.md
+          test -f docs/usage-guide.md
+          test -f docker/README.md
+          test -f examples/java-maven/README.md
+          test -f examples/python/README.md
+          test -f examples/nodejs/README.md
+          test -f examples/docker/README.md
+          test -f CONTRIBUTING.md
+      
+      - name: Validate Markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: '.github/markdown-link-check-config.json'
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'no'
+        continue-on-error: true
+  
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test, validate-examples, lint, markdown-lint]
+    if: always()
+    
+    steps:
+      - name: Check results
+        run: |
+          echo "## CI 테스트 결과 요약" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 통합 테스트: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 예제 검증: ${{ needs.validate-examples.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 스크립트 린팅: ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 문서 검증: ${{ needs.markdown-lint.result }}" >> $GITHUB_STEP_SUMMARY

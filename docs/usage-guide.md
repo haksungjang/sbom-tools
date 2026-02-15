@@ -46,7 +46,7 @@ scan-sbom.sh --project <프로젝트명> --version <버전> [옵션]
 --project "PaymentService"
 ```
 
-**주의사항**:
+주의사항:
 - 공백이 포함된 경우 따옴표로 감싸야 합니다
 - 특수문자(`/`, `\`, `:`)는 피하는 것이 좋습니다
 
@@ -75,7 +75,7 @@ scan-sbom.sh --project <프로젝트명> --version <버전> [옵션]
 --target "./extracted-rootfs/"
 ```
 
-**미지정 시**: 현재 디렉토리의 소스코드를 분석합니다.
+미지정 시: 현재 디렉토리의 소스코드를 분석합니다.
 
 ### --generate-only (선택)
 
@@ -85,7 +85,7 @@ SBOM을 로컬에만 저장하고 서버에 업로드하지 않습니다.
 --generate-only
 ```
 
-**사용 시나리오**:
+사용 시나리오:
 - 테스트 목적
 - 수동 검토 후 제출
 - 오프라인 환경
@@ -96,7 +96,7 @@ SBOM을 로컬에만 저장하고 서버에 업로드하지 않습니다.
 
 SBOM Tools는 프로젝트 디렉토리의 파일을 분석하여 자동으로 언어를 감지합니다.
 
-**감지 방법**:
+감지 방법:
 
 | 언어 | 감지 파일 |
 |------|----------|
@@ -138,7 +138,7 @@ cd project/
 scan-sbom.sh --project "FullStackApp" --version "1.0.0" --generate-only
 ```
 
-**결과**: 모든 언어의 의존성이 하나의 SBOM에 포함됩니다.
+결과: 모든 언어의 의존성이 하나의 SBOM에 포함됩니다.
 
 ## Docker 이미지 분석
 
@@ -173,7 +173,7 @@ scan-sbom.sh \
   --generate-only
 ```
 
-**참고**: 이미지가 로컬에 없으면 자동으로 pull을 시도합니다.
+참고: 이미지가 로컬에 없으면 자동으로 pull을 시도합니다.
 
 ### 프라이빗 레지스트리
 
@@ -229,7 +229,7 @@ scan-sbom.sh \
   --generate-only
 ```
 
-**주의사항**:
+주의사항:
 - 바이너리 분석은 메타데이터 추출에 제한적입니다
 - 정적 링크된 라이브러리는 감지가 어렵습니다
 - 정확한 SBOM 생성을 위해서는 소스코드 분석을 권장합니다
@@ -251,7 +251,7 @@ scan-sbom.sh \
   --generate-only
 ```
 
-**사용 사례**:
+사용 사례:
 - 임베디드 시스템 펌웨어
 - 컨테이너 파일 시스템 추출
 - OS 이미지 분석
@@ -369,14 +369,14 @@ pipeline {
 
 #### Maven 프로젝트
 
-**필수 파일**: `pom.xml`
+필수 파일: `pom.xml`
 
 ```bash
 cd my-maven-project
 scan-sbom.sh --project "MyMavenApp" --version "1.0.0" --generate-only
 ```
 
-**멀티 모듈 프로젝트**:
+멀티 모듈 프로젝트:
 
 ```bash
 # 루트 pom.xml이 있는 디렉토리에서 실행
@@ -384,7 +384,7 @@ cd multi-module-project/
 scan-sbom.sh --project "MultiModuleApp" --version "1.0.0" --generate-only
 ```
 
-**레거시 Java 7 프로젝트**:
+레거시 Java 7 프로젝트:
 
 ```xml
 <!-- pom.xml -->
@@ -396,18 +396,18 @@ scan-sbom.sh --project "MultiModuleApp" --version "1.0.0" --generate-only
 
 SBOM Tools는 Java 7-17을 지원합니다 (JDK 17 포함).
 
-> **참고:** Docker 이미지에는 JDK 17이 포함되어 있습니다. Java 21 프로젝트는 대부분 JDK 17에서 분석 가능하지만, Java 21 전용 기능을 사용하는 경우 일부 제한이 있을 수 있습니다.
+> 참고: Docker 이미지에는 JDK 17이 포함되어 있습니다. Java 21 프로젝트는 대부분 JDK 17에서 분석 가능하지만, Java 21 전용 기능을 사용하는 경우 일부 제한이 있을 수 있습니다.
 
 #### Gradle 프로젝트
 
-**필수 파일**: `build.gradle` 또는 `build.gradle.kts`
+필수 파일: `build.gradle` 또는 `build.gradle.kts`
 
 ```bash
 cd my-gradle-project
 scan-sbom.sh --project "MyGradleApp" --version "1.0.0" --generate-only
 ```
 
-**Gradle Wrapper**:
+Gradle Wrapper:
 
 `gradlew`가 있으면 자동으로 사용됩니다.
 
@@ -416,7 +416,7 @@ scan-sbom.sh --project "MyGradleApp" --version "1.0.0" --generate-only
 scan-sbom.sh --project "MyApp" --version "1.0" --generate-only
 ```
 
-**Kotlin DSL (build.gradle.kts)**:
+Kotlin DSL (build.gradle.kts):
 
 Kotlin으로 작성된 빌드 스크립트도 지원됩니다.
 
@@ -424,7 +424,7 @@ Kotlin으로 작성된 빌드 스크립트도 지원됩니다.
 
 #### pip (requirements.txt)
 
-**필수 파일**: `requirements.txt`
+필수 파일: `requirements.txt`
 
 ```bash
 cd my-python-project
@@ -436,7 +436,7 @@ pip freeze > requirements.txt
 scan-sbom.sh --project "MyPythonApp" --version "1.0.0" --generate-only
 ```
 
-**가상 환경 사용**:
+가상 환경 사용:
 
 ```bash
 # 가상 환경 생성 및 활성화
@@ -455,7 +455,7 @@ scan-sbom.sh --project "MyApp" --version "1.0" --generate-only
 
 #### Poetry
 
-**필수 파일**: `pyproject.toml`, `poetry.lock`
+필수 파일: `pyproject.toml`, `poetry.lock`
 
 ```bash
 cd my-poetry-project
@@ -469,7 +469,7 @@ scan-sbom.sh --project "MyPoetryApp" --version "1.0.0" --generate-only
 
 #### Pipenv
 
-**필수 파일**: `Pipfile`, `Pipfile.lock`
+필수 파일: `Pipfile`, `Pipfile.lock`
 
 ```bash
 cd my-pipenv-project
@@ -483,9 +483,9 @@ scan-sbom.sh --project "MyPipenvApp" --version "1.0.0" --generate-only
 
 #### Python 2.x (레거시) - 지원 중단
 
-> **중요:** Python 2는 2020년에 공식 지원이 종료되었으며, Docker 이미지에서 제거되었습니다. Python 2 프로젝트는 Python 3로 마이그레이션하는 것을 강력히 권장합니다.
+> 중요: Python 2는 2020년에 공식 지원이 종료되었으며, Docker 이미지에서 제거되었습니다. Python 2 프로젝트는 Python 3로 마이그레이션하는 것을 강력히 권장합니다.
 
-**대안:**
+대안:
 - Python 3로 코드 마이그레이션
 - 또는 Python 2가 포함된 커스텀 Docker 이미지 빌드
 
@@ -493,7 +493,7 @@ scan-sbom.sh --project "MyPipenvApp" --version "1.0.0" --generate-only
 
 #### npm
 
-**필수 파일**: `package.json`, `package-lock.json`
+필수 파일: `package.json`, `package-lock.json`
 
 ```bash
 cd my-nodejs-project
@@ -505,7 +505,7 @@ npm install
 scan-sbom.sh --project "MyNodeApp" --version "1.0.0" --generate-only
 ```
 
-**package.json만 있는 경우**:
+package.json만 있는 경우:
 
 ```bash
 # lock 파일 생성
@@ -517,7 +517,7 @@ scan-sbom.sh --project "MyApp" --version "1.0" --generate-only
 
 #### Yarn
 
-**필수 파일**: `package.json`, `yarn.lock`
+필수 파일: `package.json`, `yarn.lock`
 
 ```bash
 cd my-yarn-project
@@ -531,7 +531,7 @@ scan-sbom.sh --project "MyYarnApp" --version "1.0.0" --generate-only
 
 #### pnpm
 
-**필수 파일**: `package.json`, `pnpm-lock.yaml`
+필수 파일: `package.json`, `pnpm-lock.yaml`
 
 ```bash
 cd my-pnpm-project
@@ -545,7 +545,7 @@ scan-sbom.sh --project "MyPnpmApp" --version "1.0.0" --generate-only
 
 ### Go
 
-**필수 파일**: `go.mod`, `go.sum`
+필수 파일: `go.mod`, `go.sum`
 
 ```bash
 cd my-go-project
@@ -557,7 +557,7 @@ go mod download
 scan-sbom.sh --project "MyGoApp" --version "1.0.0" --generate-only
 ```
 
-**모듈 업데이트**:
+모듈 업데이트:
 
 ```bash
 # 의존성 정리
@@ -569,7 +569,7 @@ scan-sbom.sh --project "MyApp" --version "1.0" --generate-only
 
 ### Ruby
 
-**필수 파일**: `Gemfile`, `Gemfile.lock`
+필수 파일: `Gemfile`, `Gemfile.lock`
 
 ```bash
 cd my-ruby-project
@@ -581,7 +581,7 @@ bundle install
 scan-sbom.sh --project "MyRubyApp" --version "1.0.0" --generate-only
 ```
 
-**Rails 프로젝트**:
+Rails 프로젝트:
 
 ```bash
 cd my-rails-app
@@ -595,7 +595,7 @@ scan-sbom.sh --project "MyRailsApp" --version "1.0" --generate-only
 
 ### PHP
 
-**필수 파일**: `composer.json`, `composer.lock`
+필수 파일: `composer.json`, `composer.lock`
 
 ```bash
 cd my-php-project
@@ -607,7 +607,7 @@ composer install
 scan-sbom.sh --project "MyPHPApp" --version "1.0.0" --generate-only
 ```
 
-**Laravel 프로젝트**:
+Laravel 프로젝트:
 
 ```bash
 cd my-laravel-app
@@ -621,7 +621,7 @@ scan-sbom.sh --project "MyLaravelApp" --version "1.0" --generate-only
 
 ### Rust
 
-**필수 파일**: `Cargo.toml`, `Cargo.lock`
+필수 파일: `Cargo.toml`, `Cargo.lock`
 
 ```bash
 cd my-rust-project
@@ -633,7 +633,7 @@ cargo generate-lockfile
 scan-sbom.sh --project "MyRustApp" --version "1.0.0" --generate-only
 ```
 
-**Workspace 프로젝트**:
+Workspace 프로젝트:
 
 ```bash
 # 루트 Cargo.toml이 있는 디렉토리에서
@@ -643,7 +643,7 @@ scan-sbom.sh --project "MyWorkspace" --version "1.0" --generate-only
 
 ### .NET
 
-**필수 파일**: `*.csproj`, `*.sln`, `packages.config`
+필수 파일: `*.csproj`, `*.sln`, `packages.config`
 
 ```bash
 cd my-dotnet-project
@@ -655,7 +655,7 @@ dotnet restore
 scan-sbom.sh --project "MyDotNetApp" --version "1.0.0" --generate-only
 ```
 
-**솔루션 프로젝트**:
+솔루션 프로젝트:
 
 ```bash
 # .sln 파일이 있는 디렉토리에서
@@ -669,7 +669,7 @@ C/C++ 프로젝트는 패키지 매니저를 사용하는 경우에만 분석 �
 
 #### Conan
 
-**필수 파일**: `conanfile.txt` 또는 `conanfile.py`
+필수 파일: `conanfile.txt` 또는 `conanfile.py`
 
 ```bash
 cd my-cpp-project
@@ -692,7 +692,7 @@ scan-sbom.sh --project "MyCppApp" --version "1.0.0" --generate-only
 
 vcpkg는 제한적으로 지원됩니다.
 
-**주의**: 헤더 파일만 사용하는 프로젝트나 직접 의존성을 관리하는 경우 SBOM 생성이 제한적일 수 있습니다.
+주의: 헤더 파일만 사용하는 프로젝트나 직접 의존성을 관리하는 경우 SBOM 생성이 제한적일 수 있습니다.
 
 ## 출력 형식
 
@@ -700,7 +700,7 @@ vcpkg는 제한적으로 지원됩니다.
 
 생성되는 SBOM은 CycloneDX 1.4 형식의 JSON 파일입니다.
 
-**파일 구조**:
+파일 구조:
 
 ```json
 {
@@ -741,24 +741,24 @@ vcpkg는 제한적으로 지원됩니다.
 {ProjectName}_{Version}_bom.json
 ```
 
-**예시**:
+예시:
 - `MyApp_1.0.0_bom.json`
 - `PaymentService_2.1.3_bom.json`
 
-**특수문자 처리**:
+특수문자 처리:
 - 공백 및 특수문자는 언더스코어(`_`)로 변환됩니다
 - 연속된 언더스코어는 하나로 축약됩니다
 
 ## 다음 단계
 
-- **[예제 프로젝트](../examples/)**: 언어별 샘플 프로젝트
-- **[Docker 이미지 가이드](../docker/README.md)**: Docker 이미지 직접 빌드
-- **[GitHub 이슈](https://github.com/sktelecom/sbom-tools/issues)**: 문제 보고 및 기능 제안
+- [예제 프로젝트](../examples/): 언어별 샘플 프로젝트
+- [Docker 이미지 가이드](../docker/README.md): Docker 이미지 직접 빌드
+- [GitHub 이슈](https://github.com/sktelecom/sbom-tools/issues): 문제 보고 및 기능 제안
 
 ## 도움말
 
 문의사항이나 문제가 있으신 경우:
 
-- **이메일**: opensource@sktelecom.com
-- **이슈**: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
-- **공식 가이드**: https://sktelecom.github.io/guide/supply-chain/
+- 이메일: opensource@sktelecom.com
+- 이슈: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
+- 공식 가이드: https://sktelecom.github.io/guide/supply-chain/
