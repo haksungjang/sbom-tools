@@ -79,6 +79,12 @@ cleanup() {
     else
         echo "Debug mode: Workspace preserved at $TEST_DIR"
     fi
+    
+    if [ "${FAILED:-0}" -eq 0 ]; then
+        exit 0
+    else
+        exit 1
+    fi
 }
 
 # Find BOM file function
