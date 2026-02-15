@@ -51,6 +51,11 @@ PASSED=0
 FAILED=0
 
 cleanup() {
+    echo "--- Debug Summary ---"
+    echo "PASSED: $PASSED"
+    echo "FAILED: $FAILED"
+    echo "Current User: $(whoami)"
+    echo "---------------------"
     echo ""
     echo "=========================================="
     echo " Cleaning up..."
