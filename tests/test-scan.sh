@@ -51,7 +51,7 @@ PASSED=0
 FAILED=0
 
 cleanup() {
-    # Disable exit-on-error for cleanup
+    # Disable exit-on-error for cleanup (we want to clean up as much as possible)
     set +e
     
     echo ""
@@ -59,21 +59,22 @@ cleanup() {
     echo " Cleaning up..."
     echo "=========================================="
     
-    # Safe cd
     cd "$ROOT_DIR" 2>/dev/null || true
     
-    # Preserve failed test logs
+    # Preserve logs if tests failed
     if [ -d "$LOG_DIR" ] && [ $FAILED -gt 0 ]; then
         FAILED_LOGS="$TEST_DIR/failed-tests-logs"
         mkdir -p "$FAILED_LOGS" 2>/dev/null || true
         cp -r "$LOG_DIR"/* "$FAILED_LOGS/" 2>/dev/null || true
         if [ -d "$FAILED_LOGS" ] && [ "$(ls -A "$FAILED_LOGS" 2>/dev/null)" ]; then
+            echo ""
             echo "Failed test logs saved to: $FAILED_LOGS"
         fi
     fi
     
-    # Clean workspace (safe iteration)
+    # Clean workspace (except logs) in non-debug mode
     if [ "$DEBUG_MODE" != "true" ] && [ -d "$TEST_DIR" ]; then
+        # More robust cleanup
         for item in "$TEST_DIR"/*; do
             if [ -e "$item" ]; then
                 basename_item=$(basename "$item")
@@ -82,12 +83,14 @@ cleanup() {
                 fi
             fi
         done
+    elif [ "$DEBUG_MODE" = "true" ]; then
+        echo "Debug mode: Workspace preserved at $TEST_DIR"
     fi
     
     # Re-enable exit-on-error
     set -e
     
-    # Always return success
+    # Return success (cleanup issues shouldn't fail the script)
     return 0
 }
 
@@ -253,7 +256,7 @@ print_success "Scan script check passed"
 # Create test directory
 mkdir -p "$TEST_DIR"
 mkdir -p "$LOG_DIR"
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 trap cleanup EXIT
 
@@ -267,7 +270,7 @@ echo ""
 print_test "Test 1/10: Node.js project (npm)"
 
 mkdir -p node-project
-cd node-project
+cd node-project || true
 
 cat > package.json <<'EOF'
 {
@@ -305,7 +308,7 @@ else
 fi
 
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 2: Python project
@@ -313,7 +316,7 @@ cd "$TEST_DIR"
 print_test "Test 2/10: Python project (pip)"
 
 mkdir -p python-project
-cd python-project
+cd python-project || true
 
 cat > requirements.txt <<'EOF'
 flask==3.0.0
@@ -343,7 +346,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 3: Java Maven project
@@ -351,7 +354,7 @@ cd "$TEST_DIR"
 print_test "Test 3/10: Java Maven project"
 
 mkdir -p java-maven-project
-cd java-maven-project
+cd java-maven-project || true
 
 cat > pom.xml <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -393,7 +396,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 4: Ruby project
@@ -401,7 +404,7 @@ cd "$TEST_DIR"
 print_test "Test 4/10: Ruby project (Bundler)"
 
 mkdir -p ruby-project
-cd ruby-project
+cd ruby-project || true
 
 cat > Gemfile <<'EOF'
 source 'https://rubygems.org'
@@ -432,7 +435,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 5: PHP project
@@ -440,7 +443,7 @@ cd "$TEST_DIR"
 print_test "Test 5/10: PHP project (Composer)"
 
 mkdir -p php-project
-cd php-project
+cd php-project || true
 
 cat > composer.json <<'EOF'
 {
@@ -474,7 +477,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 6: Rust project
@@ -482,7 +485,7 @@ cd "$TEST_DIR"
 print_test "Test 6/10: Rust project (Cargo)"
 
 mkdir -p rust-project
-cd rust-project
+cd rust-project || true
 
 cat > Cargo.toml <<'EOF'
 [package]
@@ -517,7 +520,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 7: Docker image analysis
@@ -552,7 +555,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 8: Binary file analysis
@@ -560,7 +563,7 @@ cd "$TEST_DIR"
 print_test "Test 8/10: Binary file analysis"
 
 mkdir -p binary-test
-cd binary-test
+cd binary-test || true
 
 # Create a simple binary file
 echo "#!/bin/sh" > test-binary
@@ -582,7 +585,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 9: RootFS directory analysis
@@ -590,7 +593,7 @@ cd "$TEST_DIR"
 print_test "Test 9/10: RootFS directory analysis"
 
 mkdir -p rootfs-test/usr/bin
-cd rootfs-test
+cd rootfs-test || true
 
 # Create minimal rootfs structure
 echo "test" > usr/bin/test-file
@@ -610,7 +613,7 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+cd "$TEST_DIR" || true
 
 # ========================================================
 # Test 10: Example projects validation
