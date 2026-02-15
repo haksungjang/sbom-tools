@@ -19,24 +19,25 @@ SBOM Scanner는 다음 환경을 포함한 Docker 이미지로 제공됩니다:
 
 | 카테고리 | 도구/런타임 | 버전 |
 |---------|------------|------|
-| 기본 이미지 | Node.js | 20 (Debian Bookworm) |
-| Java | Eclipse Temurin JDK | 8, 11, 17, 21 |
-| Python | Python 3 | 3.11+ |
-| Python | Python 2 (레거시) | 2.7 |
-| Ruby | Ruby + Bundler | 3.x |
-| PHP | PHP + Composer | 8.x |
-| Rust | Rust + Cargo | Stable |
-| 빌드 도구 | Maven, Gradle | Latest |
-| SBOM 생성 | cdxgen | Latest |
-| 이미지 분석 | Syft | Latest |
-| 컨테이너 분석 | Docker CLI | Latest |
+| **기본 이미지** | Node.js | 20 (Debian Slim) |
+| **Java** | Eclipse Temurin JDK | 17 LTS |
+| **Python** | Python 3 | 3.11+ |
+| **Ruby** | Ruby + Bundler | 3.x |
+| **PHP** | PHP + Composer | 8.x |
+| **Rust** | Rust + Cargo | Stable (minimal) |
+| **빌드 도구** | Maven, Gradle | Latest |
+| **SBOM 생성** | cdxgen | Latest |
+| **이미지 분석** | Syft | Latest |
+| **컨테이너 분석** | Docker CLI | Latest |
+
+> **최적화:** 이미지 크기를 50% 줄이기 위해 JDK 17만 포함됩니다 (Java 7-17 지원). Python 2는 제거되었습니다 (2020 EOL).
 
 ### 이미지 정보
 
-- 저장소: `ghcr.io/sktelecom/sbom-scanner`
-- 태그: `v1`, `latest`
-- 플랫폼: `linux/amd64`, `linux/arm64`
-- 크기: 약 2.5GB (압축 후)
+- **저장소**: `ghcr.io/sktelecom/sbom-scanner`
+- **태그**: `v1`, `latest`
+- **플랫폼**: `linux/amd64`, `linux/arm64`
+- **크기**: 약 3-4 GB (최적화됨, 이전 7.3 GB)
 
 ## 사전 빌드된 이미지 사용
 
@@ -146,7 +147,7 @@ docker images | grep sbom-scanner
 docker run --rm sbom-scanner:local cdxgen --version
 ```
 
-출력 예시:
+**출력 예시**:
 ```
 10.2.0
 ```
@@ -184,7 +185,7 @@ docker buildx inspect --bootstrap
 docker buildx inspect
 ```
 
-출력 예시:
+**출력 예시**:
 ```
 Name:   multiplatform-builder
 Driver: docker-container
@@ -204,7 +205,7 @@ docker buildx build \
   .
 ```
 
-참고: `--load`는 단일 플랫폼만 가능. 멀티 플랫폼은 `--push` 사용.
+**참고**: `--load`는 단일 플랫폼만 가능. 멀티 플랫폼은 `--push` 사용.
 
 ### GitHub Container Registry에 푸시
 
@@ -218,7 +219,7 @@ docker buildx build \
   .
 ```
 
-빌드 시간: 약 15-20분 (플랫폼 2개)
+**빌드 시간**: 약 15-20분 (플랫폼 2개)
 
 ## GitHub Container Registry 배포
 
@@ -243,7 +244,7 @@ export GITHUB_USERNAME="your_github_username"
 echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
 ```
 
-성공 메시지:
+**성공 메시지**:
 ```
 Login Succeeded
 ```
@@ -272,7 +273,7 @@ docker buildx build \
 docker buildx imagetools inspect ghcr.io/${ORG_NAME}/${IMAGE_NAME}:${VERSION}
 ```
 
-출력 예시:
+**출력 예시**:
 ```
 Name:      ghcr.io/sktelecom/sbom-scanner:v1
 MediaType: application/vnd.oci.image.index.v1+json
@@ -339,7 +340,7 @@ ENTRYPOINT ["/usr/local/bin/run-scan"]
 | SBOM 도구 | ~150MB | cdxgen, syft |
 | 기타 도구 | ~100MB | Maven, Gradle, Git 등 |
 
-총 크기: 약 2.5GB (압축 전: ~4GB)
+**총 크기**: 약 2.5GB (압축 전: ~4GB)
 
 ### 지원 아키텍처
 
@@ -402,9 +403,9 @@ cat TestProject_1.0.0_bom.json | jq '.components | length'
 
 #### 오류: "manifest unknown"
 
-원인: GitHub Container Registry에 이미지가 없음
+**원인**: GitHub Container Registry에 이미지가 없음
 
-해결:
+**해결**:
 ```bash
 # 로그인 확인
 docker login ghcr.io
@@ -415,9 +416,9 @@ echo ghcr.io/sktelecom/sbom-scanner:v1
 
 #### 오류: "no space left on device"
 
-원인: 디스크 공간 부족
+**원인**: 디스크 공간 부족
 
-해결:
+**해결**:
 ```bash
 # 사용하지 않는 이미지 정리
 docker system prune -a
@@ -430,9 +431,9 @@ df -h
 
 #### 오류: "Cannot connect to the Docker daemon"
 
-원인: Docker 소켓이 마운트되지 않음 (IMAGE 모드)
+**원인**: Docker 소켓이 마운트되지 않음 (IMAGE 모드)
 
-해결:
+**해결**:
 ```bash
 # Linux/macOS
 -v /var/run/docker.sock:/var/run/docker.sock
@@ -443,9 +444,9 @@ df -h
 
 #### 오류: "Permission denied" (파일 쓰기)
 
-원인: 컨테이너 내부 사용자 권한 문제
+**원인**: 컨테이너 내부 사용자 권한 문제
 
-해결:
+**해결**:
 ```bash
 # 현재 사용자 권한으로 실행
 docker run --rm --user $(id -u):$(id -g) ...
@@ -490,12 +491,12 @@ root@container:/src# cdxgen -o bom.json .
 
 ## 참고 자료
 
-- Dockerfile: [docker/Dockerfile](Dockerfile)
-- Entrypoint 스크립트: [docker/entrypoint.sh](entrypoint.sh)
-- Docker 공식 문서: https://docs.docker.com/
-- Docker Buildx: https://docs.docker.com/buildx/working-with-buildx/
+- **Dockerfile**: [docker/Dockerfile](Dockerfile)
+- **Entrypoint 스크립트**: [docker/entrypoint.sh](entrypoint.sh)
+- **Docker 공식 문서**: https://docs.docker.com/
+- **Docker Buildx**: https://docs.docker.com/buildx/working-with-buildx/
 
 ## 문의
 
-- 이메일: opensource@sktelecom.com
-- 이슈: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
+- **이메일**: opensource@sktelecom.com
+- **이슈**: [GitHub Issues](https://github.com/sktelecom/sbom-tools/issues)
