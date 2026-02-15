@@ -87,9 +87,6 @@ cleanup() {
         echo "Debug mode: Workspace preserved at $TEST_DIR"
     fi
     
-    # Re-enable exit-on-error
-    set -e
-    
     # Return success (cleanup issues shouldn't fail the script)
     return 0
 }
