@@ -9,23 +9,33 @@ on:
 
 jobs:
   test:
-    name: Integration Test
+    name: Integration Tests
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Set up Docker
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: 테스트 스크립트 실행 권한 부여
+      - name: Grant script permissions
         run: |
           chmod +x scripts/scan-sbom.sh
           chmod +x tests/test-scan.sh
       
-      - name: Integration Test 실행
-        run: ./tests/test-scan.sh
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          ./tests/test-scan.sh
+      
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: tests/test-workspace/failed-tests-logs/
+          retention-days: 7
       
       - name: Upload generated SBOMs
         if: always()
@@ -34,47 +44,6 @@ jobs:
           name: test-sbom-files
           path: tests/test-workspace/*_bom.json
           retention-days: 7
-  
-  validate-examples:
-    name: Validate Examples
-    runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        example: [java-maven, python, nodejs]
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Grant script permissions
-        run: chmod +x scripts/scan-sbom.sh
-      
-      - name: Validate Java example
-        if: matrix.example == 'java-maven'
-        run: |
-          cd examples/java-maven
-          test -f pom.xml
-          test -f src/main/java/com/example/Application.java
-          test -f README.md
-      
-      - name: Validate Python example
-        if: matrix.example == 'python'
-        run: |
-          cd examples/python
-          test -f requirements.txt
-          test -f app.py
-          test -f README.md
-      
-      - name: Validate Node.js example
-        if: matrix.example == 'nodejs'
-        run: |
-          cd examples/nodejs
-          test -f package.json
-          test -f index.js
-          test -f README.md
-          npm install --package-lock-only
-          test -f package-lock.json
   
   lint:
     name: Lint Scripts
@@ -91,9 +60,10 @@ jobs:
       
       - name: Lint Bash scripts
         run: |
-          shellcheck scripts/scan-sbom.sh || true
-          shellcheck docker/entrypoint.sh || true
-          shellcheck tests/test-scan.sh || true
+          echo "Linting shell scripts..."
+          shellcheck scripts/scan-sbom.sh
+          shellcheck docker/entrypoint.sh
+          shellcheck tests/test-scan.sh
       
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
@@ -101,7 +71,7 @@ jobs:
           dockerfile: docker/Dockerfile
           failure-threshold: warning
   
-  markdown-lint:
+  validate-docs:
     name: Validate Documentation
     runs-on: ubuntu-latest
     
@@ -109,38 +79,124 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Check Markdown files
+      - name: Check required documentation
         run: |
-          test -f README.md
-          test -f docs/getting-started.md
-          test -f docs/usage-guide.md
-          test -f docker/README.md
-          test -f examples/java-maven/README.md
-          test -f examples/python/README.md
-          test -f examples/nodejs/README.md
-          test -f examples/docker/README.md
-          test -f CONTRIBUTING.md
+          echo "Checking required documentation files..."
+          
+          # Main documentation (English)
+          test -f README.md || { echo "❌ README.md not found"; exit 1; }
+          test -f LICENSE || { echo "❌ LICENSE not found"; exit 1; }
+          
+          # User documentation (Korean)
+          test -f docs/getting-started.md || { echo "❌ getting-started.md not found"; exit 1; }
+          test -f docs/usage-guide.md || { echo "❌ usage-guide.md not found"; exit 1; }
+          test -f docs/examples-guide.md || { echo "❌ examples-guide.md not found"; exit 1; }
+          test -f docs/architecture.ko.md || { echo "❌ architecture.ko.md not found"; exit 1; }
+          
+          # Contributor documentation (Korean)
+          test -d docs/contributing || { echo "❌ docs/contributing/ not found"; exit 1; }
+          test -f docs/contributing/package-manager-guide.ko.md || { echo "❌ package-manager-guide.ko.md not found"; exit 1; }
+          test -f docs/contributing/testing-guide.ko.md || { echo "❌ testing-guide.ko.md not found"; exit 1; }
+          test -f docs/contributing/test-logging-guide.ko.md || { echo "❌ test-logging-guide.ko.md not found"; exit 1; }
+          
+          # Component documentation
+          test -f docker/README.md || { echo "❌ docker/README.md not found"; exit 1; }
+          
+          echo "✅ All required documentation files exist"
       
-      - name: Validate Markdown links
+      - name: Check Markdown links
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           config-file: '.github/markdown-link-check-config.json'
           use-quiet-mode: 'yes'
-          use-verbose-mode: 'no'
         continue-on-error: true
   
-  summary:
-    name: Test Summary
+  validate-examples:
+    name: Validate Examples
     runs-on: ubuntu-latest
-    needs: [test, validate-examples, lint, markdown-lint]
+    
+    strategy:
+      matrix:
+        example: [java-maven, java-gradle, nodejs, python, go, ruby, php, rust, dotnet, docker]
+      fail-fast: false
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Validate ${{ matrix.example }} structure
+        run: |
+          echo "Validating ${{ matrix.example }} example..."
+          cd examples/${{ matrix.example }}
+          
+          # Check README exists
+          if [ ! -f README.md ]; then
+            echo "❌ README.md not found in ${{ matrix.example }}"
+            exit 1
+          fi
+          
+          # Check manifest file based on example type
+          case "${{ matrix.example }}" in
+            java-maven)
+              test -f pom.xml && test -d src/main/java || exit 1
+              ;;
+            java-gradle)
+              test -f build.gradle && test -d src/main/java || exit 1
+              ;;
+            nodejs)
+              test -f package.json || exit 1
+              ;;
+            python)
+              test -f requirements.txt || exit 1
+              ;;
+            go)
+              test -f go.mod || exit 1
+              ;;
+            ruby)
+              test -f Gemfile || exit 1
+              ;;
+            php)
+              test -f composer.json || exit 1
+              ;;
+            rust)
+              test -f Cargo.toml && test -d src || exit 1
+              ;;
+            dotnet)
+              ls *.csproj > /dev/null 2>&1 || exit 1
+              ;;
+            docker)
+              test -f Dockerfile || exit 1
+              ;;
+          esac
+          
+          echo "✅ ${{ matrix.example }} validation passed"
+  
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [test, lint, validate-docs, validate-examples]
     if: always()
     
     steps:
-      - name: Check results
+      - name: Generate summary
         run: |
-          echo "## CI 테스트 결과 요약" >> $GITHUB_STEP_SUMMARY
+          echo "## CI Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 통합 테스트: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 예제 검증: ${{ needs.validate-examples.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 스크립트 린팅: ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 문서 검증: ${{ needs.markdown-lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Script Linting | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.validate-docs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Examples | ${{ needs.validate-examples.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if any job failed
+          if [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.validate-docs.result }}" != "success" ] || \
+             [ "${{ needs.validate-examples.result }}" != "success" ]; then
+            echo "❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
+          fi
