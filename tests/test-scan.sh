@@ -289,7 +289,9 @@ else
     ((FAILED++))
 fi
 
-cd "$TEST_DIR"
+# cd "$TEST_DIR"
+echo "Current Dir: $(pwd), Target Dir: $TEST_DIR"
+cd "${TEST_DIR:-.}" # TEST_DIR이 비어있으면 현재 디렉토리 사용
 
 # ========================================================
 # Test 2: Python project
