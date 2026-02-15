@@ -27,7 +27,7 @@ jobs:
       - name: Run integration tests
         run: |
           echo "Running integration tests..."
-          DEBUG=true ./tests/test-scan.sh
+          VERBOSE=true ./tests/test-scan.sh
         continue-on-error: false
       
       - name: Upload test logs on failure

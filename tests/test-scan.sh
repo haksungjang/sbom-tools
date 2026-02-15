@@ -17,7 +17,7 @@
 # SBOM Tools - Integration Test Script
 # ========================================================
 
-set +e
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
@@ -51,34 +51,44 @@ PASSED=0
 FAILED=0
 
 cleanup() {
-    echo "--- Debug Summary ---"
-    echo "PASSED: $PASSED"
-    echo "FAILED: $FAILED"
-    echo "Current User: $(whoami)"
-    echo "---------------------"
+    # Disable exit-on-error for cleanup
+    set +e
+    
     echo ""
     echo "=========================================="
     echo " Cleaning up..."
     echo "=========================================="
-    cd "$ROOT_DIR"
     
-    # Preserve logs
-    if [ -d "$LOG_DIR" ]; then
+    # Safe cd
+    cd "$ROOT_DIR" 2>/dev/null || true
+    
+    # Preserve failed test logs
+    if [ -d "$LOG_DIR" ] && [ $FAILED -gt 0 ]; then
         FAILED_LOGS="$TEST_DIR/failed-tests-logs"
-        if [ $FAILED -gt 0 ]; then
-            mkdir -p "$FAILED_LOGS"
-            cp -r "$LOG_DIR"/* "$FAILED_LOGS/" 2>/dev/null || true
-            echo ""
+        mkdir -p "$FAILED_LOGS" 2>/dev/null || true
+        cp -r "$LOG_DIR"/* "$FAILED_LOGS/" 2>/dev/null || true
+        if [ -d "$FAILED_LOGS" ] && [ "$(ls -A "$FAILED_LOGS" 2>/dev/null)" ]; then
             echo "Failed test logs saved to: $FAILED_LOGS"
         fi
     fi
     
-    # Clean workspace (except logs)
-    if [ "$DEBUG_MODE" != "true" ]; then
-        find "$TEST_DIR" -mindepth 1 -maxdepth 1 ! -name 'logs' ! -name 'failed-tests-logs' -exec rm -rf {} + 2>/dev/null || true
-    else
-        echo "Debug mode: Workspace preserved at $TEST_DIR"
+    # Clean workspace (safe iteration)
+    if [ "$DEBUG_MODE" != "true" ] && [ -d "$TEST_DIR" ]; then
+        for item in "$TEST_DIR"/*; do
+            if [ -e "$item" ]; then
+                basename_item=$(basename "$item")
+                if [ "$basename_item" != "logs" ] && [ "$basename_item" != "failed-tests-logs" ]; then
+                    rm -rf "$item" 2>/dev/null || true
+                fi
+            fi
+        done
     fi
+    
+    # Re-enable exit-on-error
+    set -e
+    
+    # Always return success
+    return 0
 }
 
 # Find BOM file function
@@ -273,30 +283,29 @@ EOF
 npm install --package-lock-only > /dev/null 2>&1 || true
 
 if run_scan_with_logs "test-nodejs" "TestNodeApp" "1.0.0"; then
-    # FOUND 변수 할당 시 에러가 나도 스크립트가 죽지 않게 || true 또는 if 사용
-    FOUND=$(find_bom_file "TestNodeApp" "1.0.0" || echo "")
-    
-    if [ -n "$FOUND" ] && [ -f "$FOUND" ]; then
-        # cat 대신 jq가 직접 파일을 읽게 하여 파이프라인 에러 방지
-        COMP_COUNT=$(jq '.components | length' "$FOUND" 2>/dev/null || echo "0")
-        
+    if FOUND=$(find_bom_file "TestNodeApp" "1.0.0"); then
+        COMP_COUNT=$(cat "$FOUND" | jq '.components | length' 2>/dev/null || echo "0")
         if [ "$COMP_COUNT" -gt 0 ]; then
             print_success "Node.js project ($COMP_COUNT components)"
             ((PASSED++))
         else
             print_error "Node.js project (SBOM is empty)"
+            show_failure_log "test-nodejs"
             ((FAILED++))
         fi
     else
         print_error "Node.js project (SBOM file not generated)"
+        show_failure_log "test-nodejs"
         ((FAILED++))
     fi
+else
+    print_error "Node.js project (Scan failed)"
+    show_failure_log "test-nodejs"
+    ((FAILED++))
 fi
 
 
-# cd "$TEST_DIR"
-echo "Current Dir: $(pwd), Target Dir: $TEST_DIR"
-cd "${TEST_DIR:-.}" # TEST_DIR이 비어있으면 현재 디렉토리 사용
+cd "$TEST_DIR"
 
 # ========================================================
 # Test 2: Python project
