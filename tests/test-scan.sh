@@ -87,8 +87,13 @@ cleanup() {
         echo "Debug mode: Workspace preserved at $TEST_DIR"
     fi
     
-    # Return success (cleanup issues shouldn't fail the script)
-    return 0
+    # Exit with appropriate code based on test results
+    # This is critical: return 0 doesn't change script exit code!
+    if [ $FAILED -gt 0 ]; then
+        exit 1
+    else
+        exit 0
+    fi
 }
 
 # Find BOM file function
